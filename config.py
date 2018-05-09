@@ -1,10 +1,12 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from hashlib import sha256
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://pouriya:haval@localhost/test'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+app.config['SECRET_KEY'] = 'secret'
 db = SQLAlchemy(app)
 
 
@@ -20,7 +22,7 @@ class User(db.Model):
     def __init__(self, username, email, password):
         self.username = username
         self.email = email
-        self.password = hash(password)
+        self.password = password
 
     def __repr__(self):
         return '<User %r, %s>' % (self.username, self.password)
@@ -52,7 +54,8 @@ class Segment(db.Model):
     _date = db.Column(db.DateTime)
     _author = db.Column(db.Integer, db.ForeignKey('user._id'))
 
-    def __init__(self, head, tail, user_id):
+    def __init__(self, slot, head, tail, user_id):
+        self.slot = slot
         self.head = head
         self.tail = tail
         self.date = datetime.now()
@@ -62,16 +65,17 @@ class Segment(db.Model):
         return '<[head tail) %r>' % self.head, self.tail
 
 
-# admin = User('admin', 'admin@example.com', 'haval')
+admin = User('admin', 'admin@example.com', sha256('admin'.encode()).hexdigest())
 # #
-# db.drop_all()
-# db.create_all() # In case user table doesn't exists already. Else remove it.
+db.drop_all()
+db.create_all() # In case user table doesn't exists already. Else remove it.
 # #
-# db.session.add(admin)
+db.session.add(admin)
 # #
-# db.session.commit() # This is needed to write the changes to database
+db.session.commit() # This is needed to write the changes to database
 #
 # # User.query.delete()
 # print(User.query.all())
 #
-# print(User.query.filter_by(username='admin').first())
+
+# print(User.query.filter_by(username='admin').first()._id)
